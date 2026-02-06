@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import Editor from './components/Editor';
 import Preview from './components/Preview';
 import './index.css';
+import { parseResume } from './utils/resumeParser';
 
 const initialResumeState = {
   personalInfo: {
@@ -45,6 +46,37 @@ function App() {
   const [resumeData, setResumeData] = useState(initialResumeState);
   const [settings, setSettings] = useState(initialSettings);
   const componentRef = useRef();
+  const fileInputRef = useRef(null);
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const parsedData = await parseResume(file);
+      setResumeData(prev => ({
+        ...prev,
+        personalInfo: { ...prev.personalInfo, ...parsedData.personalInfo },
+        skills: parsedData.skills ? (prev.skills ? prev.skills + ', ' + parsedData.skills : parsedData.skills) : prev.skills,
+        languages: parsedData.languages ? (prev.languages ? prev.languages + ', ' + parsedData.languages : parsedData.languages) : prev.languages,
+        education: [...prev.education, ...parsedData.education],
+        experience: [...prev.experience, ...parsedData.experience],
+        projects: [...prev.projects, ...parsedData.projects],
+        certificates: [...prev.certificates, ...parsedData.certificates]
+      }));
+      alert("Resume imported successfully! Please review the data.");
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to parse resume: ${err.message}`);
+    }
+    if (event.target) event.target.value = '';
+  };
 
   const handlePrint = () => {
     window.print();
@@ -58,6 +90,16 @@ function App() {
           <button className="btn btn-outline" onClick={() => setResumeData(initialResumeState)}>
             Reset Data
           </button>
+          <button className="btn btn-outline" onClick={handleImportClick}>
+            Import Resume
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            accept=".pdf,.docx"
+          />
           <button className="btn" onClick={handlePrint}>
             Download PDF
           </button>
