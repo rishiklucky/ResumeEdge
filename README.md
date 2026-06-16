@@ -27,21 +27,6 @@ A fast, premium-looking ATS-friendly resume builder built with React and Vite.
   - "Add Bullet" helper for easy formatting.
 - **PDF Export**: High-quality, text-searchable PDF export.
 
-## How to Run
-
-1.  Navigate to the project directory:
-    ```bash
-    cd c:\MRU\3-2\Resume_Builder
-    ```
-2.  Install dependencies (if not already):
-    ```bash
-    npm install
-    ```
-3.  Start the development server:
-    ```bash
-    npm run dev
-    ```
-4.  Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## How to Export PDF
 1.  Customize your resume in the editor.
