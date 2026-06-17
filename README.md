@@ -28,6 +28,7 @@ A fast, premium-looking ATS-friendly resume builder built with React and Vite.
 - **PDF Export**: High-quality, text-searchable PDF export.
 
 
+
 ## How to Export PDF
 1.  Customize your resume in the editor.
 2.  Click the **Download PDF** button.
