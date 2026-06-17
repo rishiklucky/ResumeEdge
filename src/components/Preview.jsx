@@ -126,13 +126,12 @@ const Preview = forwardRef(({ resumeData, settings }, ref) => {
                                             <span style={{ color: accentColor, marginRight: '6px' }}>•</span>
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                 {href ? (
-                                                    <a href={href} target="_blank" rel="noreferrer" style={{ fontWeight: 'bold', fontSize: '14px', color: accentColor, textDecoration: 'none' }}>{cert.name}</a>
+                                                    <a href={href} target="_blank" rel="noreferrer" style={{ fontWeight: 'bold', fontSize: '14px', color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px' }}>{cert.name}</a>
                                                 ) : (
-                                                    <span style={{ fontWeight: 'bold' }}>{cert.name}</span>
+                                                    <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{cert.name}</span>
                                                 )}
                                                 {cert.issuer && <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.9 }}>{cert.issuer}</span>}
-                                                {cert.date && <span style={{ fontSize: '13px', opacity: 0.9 }}>Date: {cert.date}</span>}
-                                                {!href && val && <span style={{ fontSize: '13px', opacity: 0.9 }}>ID: {val}</span>}
+                                                {cert.date && <span style={{ fontSize: '13px', opacity: 0.9 }}>{cert.date}</span>}
                                             </div>
                                         </div>
                                     </div>
