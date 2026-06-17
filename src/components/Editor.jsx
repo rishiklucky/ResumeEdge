@@ -145,6 +145,26 @@ const Editor = ({ resumeData, setResumeData, settings, setSettings }) => {
         });
     };
 
+    const addNewPara = (section, index, field) => {
+        setResumeData(prev => {
+            const newSection = [...prev[section]];
+            const currentVal = newSection[index][field] || '';
+            newSection[index] = {
+                ...newSection[index],
+                [field]: currentVal.trimEnd() + '\n\n'
+            };
+            return { ...prev, [section]: newSection };
+        });
+        // Focus the textarea after adding a paragraph break
+        requestAnimationFrame(() => {
+            const ta = document.getElementById(`projects-desc-${index}`);
+            if (ta) {
+                ta.focus();
+                ta.selectionStart = ta.selectionEnd = ta.value.length;
+            }
+        });
+    };
+
 
 
     const renderAccordionSection = (sectionId, label, index) => {
@@ -268,8 +288,8 @@ const Editor = ({ resumeData, setResumeData, settings, setSettings }) => {
                                         <input value={proj.link} onChange={(e) => handleArrayChange('projects', index, 'link', e.target.value)} placeholder="github.com/..." />
                                     </div>
                                     <div className="input-group">
-                                        <label>Description <button className="bullet-btn" onClick={() => addBullet('projects', index, 'description')}>+ Bullet</button></label>
-                                        <textarea value={proj.description} onChange={(e) => handleArrayChange('projects', index, 'description', e.target.value)} placeholder="• Built a cool app..." />
+                                        <label>Description <button className="bullet-btn" onClick={() => addNewPara('projects', index, 'description')}>+ Para</button></label>
+                                        <textarea id={`projects-desc-${index}`} value={proj.description} onChange={(e) => handleArrayChange('projects', index, 'description', e.target.value)} placeholder="Describe your project..." style={{ minHeight: '100px' }} />
                                     </div>
                                 </div>
                             ))}

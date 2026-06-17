@@ -143,6 +143,7 @@ const extractDataFromText = (text) => {
     const phoneRegex = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
     const linkedinRegex = /linkedin\.com\/in\/([^\s/]+)/i;
     const githubRegex = /github\.com\/([^\s/]+)/i;
+    const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/i;
 
     // --- Extract Basic Info ---
     const emailMatch = cleanText.match(emailRegex);
@@ -161,7 +162,7 @@ const extractDataFromText = (text) => {
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i].replace(/^###\s*/, ''); // Remove marker
         const upper = line.toUpperCase();
-        const skip = ['RESUME', 'CV', 'PAGE', 'CONTACT', 'SUMMARY', 'PROFILE'];
+        const skip = ['RESUME', 'CV', 'PAGE', 'CONTACT', 'SUMMARY', 'PROFILE', 'EDUCATION', 'EXPERIENCE'];
 
         // If line matches a person's name pattern (no numbers, no special chars except standard name ones)
         if (line.length > 3 && line.length < 40 && !line.includes('@') && !/\d/.test(line)) {
@@ -174,12 +175,12 @@ const extractDataFromText = (text) => {
 
     // --- Section identification ---
     const keywords = {
-        experience: ['experience', 'work history', 'employment', 'career history'],
-        education: ['education', 'academic', 'qualifications', 'university'],
-        skills: ['skills', 'technologies', 'technical skills', 'stack'],
-        projects: ['projects', 'personal projects', 'side projects'],
+        experience: ['experience', 'work history', 'employment', 'career history', 'professional background'],
+        education: ['education', 'academic', 'qualifications', 'university', 'college'],
+        skills: ['skills', 'technologies', 'technical skills', 'stack', 'core competencies'],
+        projects: ['projects', 'personal projects', 'side projects', 'key projects'],
         languages: ['languages'],
-        certificates: ['certificates', 'awards', 'honors'],
+        certificates: ['certificates', 'awards', 'honors', 'certifications'],
         summary: ['summary', 'profile', 'about me', 'objective']
     };
 
@@ -225,20 +226,27 @@ const extractDataFromText = (text) => {
         let currentItem = [];
 
         // Heuristics for new item start:
-        // 1. Line starts with '### ' (Large text) - likely a Company or Job Title
+        // 1. Line starts with '### ' (Large text) - likely a Company or Job Title, but we stripped markers in sectionLines
         // 2. Line contains a Date Range
         const dateRegex = /(\b(19|20)\d{2}\b)|(\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s?\d{4})/i;
 
         lines.forEach(line => {
-            // Check if we lost the marker? No, we stripped markers BEFORE storing in sectionLines.
-            // So we rely on Date regex primarily.
-
             const hasDate = dateRegex.test(line);
 
-            if (hasDate && currentItem.length > 0) {
+            // Heuristic: If line is short and looks like a Title (Caps or Title Case) AND previous item has specific content...
+            // Checking for common role keywords if no date is found
+            const roleKeywords = ['Engineer', 'Developer', 'Manager', 'Analyst', 'Consultant', 'Intern', 'Designer', 'Architect'];
+            const hasRole = roleKeywords.some(r => line.includes(r));
+
+            if ((hasDate || (hasRole && line.length < 50)) && currentItem.length > 2) {
+                // Only split if previous item has some substance, to avoid splitting header lines
+                items.push(currentItem);
+                currentItem = [];
+            } else if (hasDate && currentItem.length > 0) {
                 items.push(currentItem);
                 currentItem = [];
             }
+
             currentItem.push(line);
         });
 
@@ -253,28 +261,47 @@ const extractDataFromText = (text) => {
             const joined = block.join('\n');
             // Attempt to extract Role/Company
             // Heuristic: Line 1 involves Job Title or Company. 
-            const firstLine = block[0];
+            // We use scoring to decide which line is Company vs Role
+            const firstLine = block[0] || '';
+            const secondLine = block[1] || '';
+
             const dateMatch = joined.match(/((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s?\d{4}|(?:\d{1,2}\/)?\d{4})\s*(?:-|to|–)\s*((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s?\d{4}|Present|Current|Now|(?:\d{1,2}\/)?\d{4})/i);
 
             let startDate = '', endDate = '';
-            let description = block.slice(1).join('\n');
+            let description = block.slice(2).join('\n');
 
             if (dateMatch) {
                 startDate = dateMatch[1];
                 endDate = dateMatch[2];
-                // If date is in first line, remove it from first line
-                if (block[0].includes(startDate)) {
-                    // clean it a bit
+                // Clean date from lines
+                if (block[0] && block[0].includes(startDate)) {
+                    // Date is in first line
+                    description = block.slice(1).join('\n');
                 }
             } else {
-                // No date found? Maybe '2023'
                 const yearMatch = joined.match(/\b(20\d{2})\b/);
                 if (yearMatch) endDate = yearMatch[1];
+                description = block.slice(1).join('\n'); // Fallback
             }
 
+            // Distinguish Company vs Role
+            let company = firstLine;
+            let role = secondLine;
+            const roleKeywords = ['Engineer', 'Developer', 'Manager', 'Analyst', 'Consultant', 'Intern', 'Designer', 'Architect', 'Lead', 'Chief', 'Head'];
+
+            // If first line has role keyword, swap
+            if (roleKeywords.some(k => firstLine.includes(k)) && !roleKeywords.some(k => secondLine.includes(k))) {
+                role = firstLine;
+                company = secondLine;
+            }
+
+            // Clean company name of date
+            if (startDate) company = company.replace(dateMatch[0], '').trim();
+            company = company.split(/,|\|/)[0].trim(); // Take first part if separate by comma
+
             return {
-                company: firstLine.split(/,|\|/)[0].trim(), // guess
-                role: block.length > 1 ? block[1] : '',
+                company: company,
+                role: role,
                 startDate,
                 endDate,
                 description: description.replace(/^[•-]\s*/gm, '') // Clean bullets
@@ -285,9 +312,28 @@ const extractDataFromText = (text) => {
     if (sectionLines.education) {
         const blocks = splitItems(sectionLines.education);
         extracted.education = blocks.map(block => {
+            const firstLine = block[0] || '';
+            const secondLine = block[1] || '';
+
+            // Scoring for School vs Degree
+            const schoolKeywords = ['University', 'College', 'Institute', 'School', 'Academy'];
+            const degreeKeywords = ['Bachelor', 'Master', 'PhD', 'B.S.', 'M.S.', 'B.A.', 'M.A.', 'Diploma', 'Degree', 'Associate'];
+
+            let school = firstLine;
+            let degree = secondLine;
+
+            // Check first line
+            const firstLineIsSchool = schoolKeywords.some(k => firstLine.includes(k));
+            const firstLineIsDegree = degreeKeywords.some(k => firstLine.includes(k));
+
+            if (firstLineIsDegree && !firstLineIsSchool) {
+                degree = firstLine;
+                school = secondLine;
+            }
+
             return {
-                school: block[0] || '',
-                degree: block.length > 1 ? block[1] : '',
+                school: school,
+                degree: degree,
                 startDate: '',
                 endDate: block.find(l => /\d{4}/.test(l))?.match(/\d{4}/)?.[0] || '',
                 gpa: block.find(l => /GPA/i.test(l)) || ''
@@ -296,15 +342,11 @@ const extractDataFromText = (text) => {
     }
 
     if (sectionLines.projects) {
-        // Projects often don't have dates. Split by 'large text' lines if we had them or short lines.
-        // Since we stripped markers, let's just group by "Name: Description" or "Name | Stack"
-        // FALLBACK: Just put them all in, but try to split by lines that look like Titles (short)
-
         const blocks = [];
         let currentBlock = [];
         sectionLines.projects.forEach(line => {
-            // If line is short and uppercase/titlecase...
-            if (line.length < 40 && !line.includes('•') && currentBlock.length > 0) {
+            // Split by title-like lines
+            if (line.length < 50 && !line.includes('•') && /[A-Z]/.test(line.charAt(0)) && currentBlock.length > 0) {
                 blocks.push(currentBlock);
                 currentBlock = [];
             }
@@ -312,27 +354,29 @@ const extractDataFromText = (text) => {
         });
         if (currentBlock.length > 0) blocks.push(currentBlock);
 
-        extracted.projects = blocks.map(block => ({
-            name: block[0] || 'Project',
-            tech: '',
-            link: '', // todo: extract links
-            description: block.slice(1).join('\n').replace(/^[•-]\s*/gm, '')
-        }));
+        extracted.projects = blocks.map(block => {
+            const joined = block.join('\n');
+            const linkMatch = joined.match(urlRegex);
+
+            return {
+                name: block[0] || 'Project',
+                tech: '',
+                link: linkMatch ? linkMatch[0] : '',
+                description: block.slice(1).join('\n').replace(/^[•-]\s*/gm, '')
+            };
+        });
     }
 
     if (sectionLines.skills) {
         // Clean up Skills: often "Languages: Python, Java"
-        extracted.skills = sectionLines.skills.join('\n'); // keep spacing for user to edit? 
-        // Or join by comma if it looks like a list
-        if (sectionLines.skills.length < 5) extracted.skills = sectionLines.skills.join(', ');
-        else extracted.skills = sectionLines.skills.join('\n');
+        // Try to merge lines if they look like a continuous list
+        extracted.skills = sectionLines.skills.map(l => l.replace(/^(Skills|Technologies|Languages):/i, '').trim()).join(', ');
     }
 
     if (sectionLines.languages) {
         extracted.languages = sectionLines.languages.join(', ');
     }
 
-    // Certificates... logic same as before
     if (sectionLines.certificates) {
         extracted.certificates = sectionLines.certificates.map(c => ({ name: c, issuer: '', date: '', link: '' }));
     }

@@ -365,6 +365,8 @@ button.btn-outline:hover {
   color: #000;
   transition: all 0.3s ease;
   position: relative;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* ATS Resume Styles (Base) */
@@ -614,64 +616,52 @@ button.btn-outline:hover {
     flex: none !important;
   }
 
-  /* Ensure the resume paper takes full width */
+  /* Resume paper — never clip content, let browser handle pagination */
   .resume-paper {
     width: 210mm !important;
-    height: var(--page-height, 297mm) !important;
-    min-height: var(--page-height, 297mm) !important;
-    max-height: var(--page-height, 297mm) !important;
-    overflow: var(--page-overflow, visible) !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     box-shadow: none !important;
     padding: 10mm !important;
-    /* Keep the same padding as on-screen */
     margin: 0 !important;
     border: none !important;
     transform: none !important;
-    display: flex !important;
-    flex-direction: column !important;
+    display: block !important;
+    /* Ensure text is selectable and links are clickable in PDF */
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    pointer-events: auto !important;
+  }
+
+  /* All links must be clickable in the PDF */
+  .resume-paper a {
+    pointer-events: auto !important;
+  }
+
+  .resume-paper::after {
+    display: none !important;
   }
 
   .resume-paper.template-two-column,
   .resume-paper.template-two-column-photo {
     padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
   .resume-two-column-container {
     flex: 1 !important;
     display: flex !important;
-    height: 100% !important;
   }
 
   .resume-sidebar {
-    height: 100% !important;
     align-self: stretch !important;
   }
 
   @page {
     margin: 0;
-    /* Let resume-paper padding handle internal margins */
     size: A4;
-  }
-}
-
-/* Page Break Helper for 2-page layout */
-.resume-paper[style*="--page-height: 594mm"]::after {
-  content: "PAGE 2 STARTS HERE";
-  position: absolute;
-  top: 297mm;
-  left: 0;
-  width: 100%;
-  border-top: 2px dashed #ff0000;
-  color: #ff0000;
-  font-size: 10px;
-  text-align: center;
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0.5;
-}
-
-@media print {
-  .resume-paper::after {
-    display: none !important;
   }
 }

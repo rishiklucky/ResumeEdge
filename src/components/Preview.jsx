@@ -62,9 +62,18 @@ const Preview = forwardRef(({ resumeData, settings }, ref) => {
                         <h2 className="resume-section-title" style={sectionTitleStyle}>{displayLabel}</h2>
                         {projects.map((proj, index) => (
                             <div key={index} className="resume-item">
-                                <div className="resume-item-header"><span>{proj.name} {proj.link && <a href={proj.link} style={{ fontSize: '0.9em', fontWeight: 'normal', color: 'inherit' }}>({proj.link})</a>}</span></div>
+                                <div className="resume-item-header">
+                                    <span>
+                                        {proj.name}
+                                        {proj.link && (
+                                            <> (<a href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`} target="_blank" rel="noreferrer" style={{ fontSize: '0.9em', fontWeight: 'normal', color: 'inherit' }}>{proj.link}</a>)</>
+                                        )}
+                                    </span>
+                                </div>
                                 {proj.tech && <div className="resume-item-sub"><span>Technologies: {proj.tech}</span></div>}
-                                {renderList(proj.description)}
+                                {proj.description && proj.description.split(/\n{2,}/).filter(p => p.trim() !== '').map((para, pi) => (
+                                    <p key={pi} style={{ fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{para.trim()}</p>
+                                ))}
                             </div>
                         ))}
                     </section>
@@ -107,17 +116,28 @@ const Preview = forwardRef(({ resumeData, settings }, ref) => {
                     <section className={`resume-section template-${template}`} key={sectionId}>
                         <h2 className="resume-section-title" style={sectionTitleStyle}>{displayLabel}</h2>
                         <div className={isTwoCol ? "skills-list" : "certs-grid"}>
-                            {certificates.map((cert, index) => (
-                                <div key={index} className="skill-item cert-item">
-                                    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                                        <span style={{ color: accentColor, marginRight: '6px' }}>•</span>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontWeight: 'bold' }}>{cert.name}</span>
-                                            {cert.issuer && <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.9 }}>{cert.issuer}</span>}
+                            {certificates.map((cert, index) => {
+                                const val = cert.link?.trim();
+                                const isUrl = val && (/^(https?:\/\/)/i.test(val) || /\./.test(val));
+                                const href = isUrl ? (/^(https?:\/\/)/i.test(val) ? val : `https://${val}`) : null;
+                                return (
+                                    <div key={index} className="skill-item cert-item">
+                                        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                                            <span style={{ color: accentColor, marginRight: '6px' }}>•</span>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                {href ? (
+                                                    <a href={href} target="_blank" rel="noreferrer" style={{ fontWeight: 'bold', fontSize: '14px', color: accentColor, textDecoration: 'none' }}>{cert.name}</a>
+                                                ) : (
+                                                    <span style={{ fontWeight: 'bold' }}>{cert.name}</span>
+                                                )}
+                                                {cert.issuer && <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.9 }}>{cert.issuer}</span>}
+                                                {cert.date && <span style={{ fontSize: '13px', opacity: 0.9 }}>Date: {cert.date}</span>}
+                                                {!href && val && <span style={{ fontSize: '13px', opacity: 0.9 }}>ID: {val}</span>}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </section>
                 );
@@ -129,23 +149,23 @@ const Preview = forwardRef(({ resumeData, settings }, ref) => {
     const getPageStyle = () => {
         const style = {
             fontFamily: fontFamily || 'Times New Roman',
-            '--name-color': settings.nameColor
+            '--name-color': settings.nameColor,
+            '--page-size': settings.pageSize
         };
 
+        // Set CSS variable for print media to use, but never clip overflow in the live preview
         if (settings.pageSize === '1') {
             style['--page-height'] = '297mm';
-            style['--page-overflow'] = 'hidden';
         } else if (settings.pageSize === '2') {
             style['--page-height'] = '594mm';
-            style['--page-overflow'] = 'hidden';
         } else {
             style['--page-height'] = 'auto';
-            style['--page-overflow'] = 'visible';
         }
 
-        style.height = style['--page-height'];
-        style.minHeight = settings.pageSize === 'auto' ? '297mm' : style['--page-height'];
-        style.overflow = style['--page-overflow'];
+        // In the browser preview, always allow content to be visible/scrollable
+        style.height = settings.pageSize === 'auto' ? 'auto' : style['--page-height'];
+        style.minHeight = '297mm';
+        style.overflow = 'visible';
 
         return style;
     };
