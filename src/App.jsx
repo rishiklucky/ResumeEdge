@@ -85,7 +85,7 @@ function App() {
   return (
     <div className="container">
       <header className="app-header">
-        <h1>ATS Resume Builder</h1>
+        <h1>Resume Builder</h1>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn btn-outline" onClick={() => setResumeData(initialResumeState)}>
             Reset Data

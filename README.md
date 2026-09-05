@@ -1,14 +1,14 @@
-# ATS Resume Builder
+# Resume Builder
 
-A fast, premium-looking ATS-friendly resume builder built with React and Vite.
+A fast, premium-looking resume builder built with React and Vite.
 
 ## Features
 - **Real-time Preview**: See your resume update as you type.
-- **ATS Friendly Output**: Generates a clean, simple layout that is easily readable by Applicant Tracking Systems.
+- **Clean Layout Output**: Generates a clean, professional layout for your resume.
 - **Premium Editor**: Modern "Glassmorphism" UI with dark mode aesthetics.
-- **Customizable Appearance**: Change accent colors and fonts while maintaining ATS compatibility.
+- **Customizable Appearance**: Change accent colors and fonts while maintaining visual formatting consistency.
 - **Multiple Layout Templates** (New!):
-  - **Standard (ATS)**: Classiccentered layout.
+  - **Standard**: Classic centered layout.
   - **Modern**: Bold, left-aligned layout with colored headers.
   - **Minimalist**: Subtle, elegant layout with focus on typography.
   - **Two-Column**: Professional layout with a sidebar for skills and contact info (Best for fitting content on 1 page).

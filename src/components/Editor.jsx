@@ -395,7 +395,7 @@ const Editor = ({ resumeData, setResumeData, settings, setSettings }) => {
                         <div className="input-group">
                             <label>Template Style</label>
                             <select name="template" value={settings.template} onChange={handleSettingsChange}>
-                                <option value="standard">Standard (ATS)</option>
+                                <option value="standard">Standard</option>
                                 <option value="two-column">Two-Column (Sidebar)</option>
                                 <option value="two-column-photo">Two-Column (Photo Profile)</option>
                             </select>
